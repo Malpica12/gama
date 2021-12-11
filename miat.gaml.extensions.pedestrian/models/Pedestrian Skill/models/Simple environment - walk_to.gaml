@@ -10,7 +10,7 @@ model pedestrian_simple_environment
 global {
 	float environment_size <- 50.0 parameter: true;
 	float margin <- 2.0;
-	int nb_obstacles <- 3 parameter: true;
+	int nb_obstacles <- 0 parameter: true;
 	int nb_people <- 100;
 	string scenario <- "frontal crossing" among: ["big crowd", "frontal crossing", "perpandicular crossing"] ;
 		

@@ -757,7 +757,8 @@ public class PedestrianSkill extends MovingSkill {
 		GamaPoint desiredVelo = currentTarget.copy(scope).minus(location)
 				.divideBy(dist / Math.min(getSpeed(agent), dist / scope.getSimulation().getClock().getStepInSeconds()));
 		GamaPoint fdest = desiredVelo.minus(current_velocity).dividedBy(getRELAXION_SFM(agent));
-		
+
+
 		forcesMap.put(agent, fdest);
 		agent.setAttribute(FORCES, forcesMap);
 		GamaPoint forces = fdest.add(fsoc);
@@ -768,10 +769,8 @@ public class PedestrianSkill extends MovingSkill {
 			final GamaPoint currentTarget, final double distPercepPedestrian, final double distPercepObstacle,
 			final IContainer pedestriansList, final IContainer obstaclesList) {
 		GamaPoint current_velocity = getVelocity(agent).copy(scope);
-		
-		double BWall = getBObstSFM(agent);
-		double Bpedestrian = getB_SFM(agent);
-		
+		double BWall = getObstacleConsiderationDistance(agent);
+		double Bpedestrian = getPedestrianConsiderationDistance(agent);
 		Double distMin = getMinDist(agent);
 		double shoulderL = getShoulderLength(agent) / 2.0 + distMin;
 		IMap<IShape, GamaPoint> forcesMap = GamaMapFactory.create();
@@ -797,7 +796,7 @@ public class PedestrianSkill extends MovingSkill {
 		GamaPoint desiredVelo = currentTarget.copy(scope).minus(location)
 				.divideBy(dist / Math.min(getSpeed(agent), dist / scope.getSimulation().getClock().getStepInSeconds()));
 		GamaPoint fdest = desiredVelo.minus(current_velocity).dividedBy(getRELAXION_SFM(agent));
-		
+
 		if (ei.equals(new GamaPoint())) { ei = fdest; }
 		GamaPoint forcesPedestrian = new GamaPoint();
 		for (IAgent ag : pedestrians) {
@@ -836,13 +835,13 @@ public class PedestrianSkill extends MovingSkill {
 		for (IAgent ag : obstacles) {
 			double distance = agent.euclidianDistanceTo(ag);
 			GamaPoint closest_point = null;
-			GamaPoint fwall = new GamaPoint();
+
 			if (distance == 0) {
 				closest_point = Punctal._closest_point_to(agent.getLocation(), ag.getGeometry().getExteriorRing(scope));
 			} else {
 				closest_point = Punctal._closest_point_to(agent.getLocation(), ag);
 			}
-
+			GamaPoint force = new GamaPoint();
 			if (distance > 0) {
 				double fact = AWall * Math.exp((shoulderL - distance) / BWall);
 				double omega = shoulderL - distance;
@@ -850,7 +849,7 @@ public class PedestrianSkill extends MovingSkill {
 				GamaPoint nij = Points.subtract(agent.getLocation(), closest_point.getLocation());
 				nij = nij.normalize();
 
-				fwall = nij.multiplyBy(fact);
+				GamaPoint fwall = nij.multiplyBy(fact);
 
 				if (omega > 0) {
 					GamaPoint tij = new GamaPoint(-1 * nij.y, nij.x);
@@ -862,13 +861,13 @@ public class PedestrianSkill extends MovingSkill {
 
 			}
 
-			forcesMap.put(ag, fwall);
+			forcesMap.put(ag, force);
 
 		}
 
 		forcesMap.put(agent, fdest);
 		agent.setAttribute(FORCES, forcesMap);
-		GamaPoint forces = fdest.add(forcesPedestrian).add(forcesWall);
+		GamaPoint forces = fdest.add(forcesPedestrian);
 		return current_velocity.add(forces).normalize();
 	}
 
